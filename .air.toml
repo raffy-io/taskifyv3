@@ -1,0 +1,60 @@
+#:schema https://json.schemastore.org/any.json
+
+env_files = []
+root = "."
+testdata_dir = "testdata"
+tmp_dir = "tmp"
+
+[build]
+# 1. This runs first on every detected change
+pre_cmd = ["./build.sh"]
+args_bin = []
+bin = "./tmp/main"
+cmd = "go build -o ./tmp/main ./cmd/web/*.go"
+delay = 1000
+entrypoint = ["./tmp/main"]
+exclude_dir = ["assets", "tmp", "vendor", "testdata" ,"static/css"]
+exclude_file = []
+exclude_regex = ["_test.go", ".*_templ.go"] # 1. Prevent infinite rebuild loops
+exclude_unchanged = false
+follow_symlink = false
+full_bin = ""
+ignore_dangerous_root_dir = false
+include_dir = []
+include_ext = ["go", "tpl", "tmpl", "html", "templ", "scss", "sass"]
+include_file = []
+kill_delay = "500ms" # 2. Changed from "0s" to give it time to shutdown
+log = "build-errors.log"
+poll = false
+poll_interval = 0
+post_cmd = []
+rerun = false
+rerun_delay = 500
+send_interrupt = true # 3. Changed from false to kill old processes cleanly
+stop_on_error = true # 4. Don't run broken builds
+
+[color]
+app = ""
+build = "yellow"
+main = "magenta"
+mode = ""
+runner = "green"
+watcher = "cyan"
+
+[log]
+main_only = false
+silent = false
+time = false
+
+[misc]
+clean_on_exit = true # 5. Cleans up the /tmp binary when you exit air
+
+[proxy]
+app_port = 0
+app_start_timeout = 0
+enabled = false
+proxy_port = 0
+
+[screen]
+clear_on_rebuild = true # Optional: Clears your terminal on reload so logs stay clean
+keep_scroll = true

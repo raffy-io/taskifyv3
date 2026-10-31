@@ -1,0 +1,40 @@
+# Compiled binaries
+# Go creates a standalone binary named after the directory, or specified via -o
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+
+# Test artifacts
+*.test
+*.out
+*.prof
+
+# Dependency directories
+# Only ignored if you use 'go mod vendor' and don't want to commit dependencies.
+# Generally, committing vendor/ is optional, but most modern Go devs rely on go.sum instead.
+# vendor/
+
+# Local/Environment configurations
+.env
+.env.*
+!.env.example
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*~
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+tailwindcss
