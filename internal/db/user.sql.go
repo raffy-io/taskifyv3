@@ -12,7 +12,7 @@ import (
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (username,email,password_hash)
 VALUES ($1, $2, $3)
-RETURNING id, username, email, password_hash
+RETURNING id, username, email, password_hash, created_at
 `
 
 type CreateUserParams struct {
@@ -29,12 +29,13 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Username,
 		&i.Email,
 		&i.PasswordHash,
+		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, username, email, password_hash
+SELECT id, username, email, password_hash, created_at
 FROM users
 WHERE email = $1
 LIMIT 1
@@ -48,6 +49,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Username,
 		&i.Email,
 		&i.PasswordHash,
+		&i.CreatedAt,
 	)
 	return i, err
 }

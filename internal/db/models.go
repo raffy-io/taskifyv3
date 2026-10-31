@@ -14,9 +14,18 @@ type Session struct {
 	Expiry pgtype.Timestamptz
 }
 
+type Task struct {
+	ID        int64
+	UserID    int64
+	Title     string
+	IsDone    pgtype.Bool
+	CreatedAt pgtype.Timestamptz
+}
+
 type User struct {
 	ID           int64
 	Username     string
 	Email        string
 	PasswordHash string
+	CreatedAt    pgtype.Timestamptz
 }

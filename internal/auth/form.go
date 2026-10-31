@@ -23,9 +23,7 @@ func (f *authForm) validate() bool {
 	email := strings.TrimSpace(f.Email)
 	if utf8.RuneCountInString(email) < 5 {
 		f.addError("email", "Must be at least 5 characters.")
-	}
-	
-	if !emailRegex.MatchString(email) {
+	} else if !emailRegex.MatchString(email) {
 		f.addError("email", "Please enter a valid email address.")
 	}
 
@@ -33,9 +31,7 @@ func (f *authForm) validate() bool {
 	password := strings.TrimSpace(f.PasswordHash)
 	if utf8.RuneCountInString(password) > 60 {
 		f.addError("password", "Cannot exceed 60 characters.")
-	}
-
-	if utf8.RuneCountInString(password) < 5 {
+	} else if utf8.RuneCountInString(password) < 5 {
 		f.addError("password", "Must be at least 5 characters.")
 	}
 

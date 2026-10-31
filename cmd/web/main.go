@@ -16,6 +16,8 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/raffy-io/taskifyv3/internal/auth"
 	taskifyDB "github.com/raffy-io/taskifyv3/internal/db"
+	"github.com/raffy-io/taskifyv3/internal/middleware"
+	"github.com/raffy-io/taskifyv3/internal/task"
 )
 
 var sessionManager *scs.SessionManager
@@ -54,8 +56,15 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(sessionManager.LoadAndSave)
 
+	// Public routes
 	r.Group(func(r chi.Router) {
 		r.Mount("/auth", auth.AuthRoutes(queries,sessionManager))
+	})
+
+	// Protected routes
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequireAuth(sessionManager))
+		r.Mount("/task", task.TaskRoutes(queries,sessionManager))
 	})
 
 	// server

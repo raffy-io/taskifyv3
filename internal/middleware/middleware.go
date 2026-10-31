@@ -21,23 +21,8 @@ func GetUserID(ctx context.Context) (int64, bool) {
 	return id, ok
 }
 
-// NoSurf adds CSRF protection to the router
-func NoSurf(next http.Handler) http.Handler {
-	csrfHandler := nosurf.New(next)
 
-	csrfHandler.SetFailureHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "Bad or missing CSRF token", http.StatusForbidden)
-
-		slog.Error("bad or missing CSRF token",
-			slog.String("path", r.URL.Path),
-			slog.String("method", r.Method),
-		)
-	}))
-
-	return csrfHandler
-}
-
-// RequireAuth checks the SCS session for a user_id
+// RequireAuth checks the SCS session for a user_id and handles HTMX requests gracefully
 func RequireAuth(sessionManager *scs.SessionManager) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -45,6 +30,17 @@ func RequireAuth(sessionManager *scs.SessionManager) func(http.Handler) http.Han
 
 			// 1. Check if the user_id exists in the SCS session
 			if !sessionManager.Exists(ctx, "user_id") {
+		
+				// If it's an HTMX request, send HX-Redirect header so the browser 
+				// performs a full page navigation instead of swapping the login HTML into a target div.
+				if r.Header.Get("HX-Request") == "true" {
+					slog.Info("Unauthenticated HTMX request, redirecting to login", "path", r.URL.Path)
+					w.Header().Set("HX-Redirect", "/auth/login")
+					w.WriteHeader(http.StatusSeeOther)
+					return
+				}
+
+				slog.Info("Unauthenticated request, redirecting to login", "path", r.URL.Path)
 				http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 				return
 			}
@@ -59,4 +55,20 @@ func RequireAuth(sessionManager *scs.SessionManager) func(http.Handler) http.Han
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+// NoSurf adds CSRF protection to the router
+func NoSurf(next http.Handler) http.Handler {
+	csrfHandler := nosurf.New(next)
+
+	csrfHandler.SetFailureHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "Bad or missing CSRF token", http.StatusForbidden)
+
+		slog.Error("bad or missing CSRF token",
+			slog.String("path", r.URL.Path),
+			slog.String("method", r.Method),
+		)
+	}))
+
+	return csrfHandler
 }

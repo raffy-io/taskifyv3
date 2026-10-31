@@ -3,6 +3,7 @@ package auth
 import (
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/raffy-io/taskifyv3/internal/db"
@@ -14,6 +15,13 @@ type authHandler struct {
 	Session *scs.SessionManager
 }
 
+func (h *authHandler) ServeRegisterPage(w http.ResponseWriter, r *http.Request){
+	
+}
+func (h *authHandler) ServeLoginPage(w http.ResponseWriter, r *http.Request){
+
+}
+
 func (h *authHandler) processRegister(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	if err := r.ParseForm(); err != nil {
@@ -21,11 +29,17 @@ func (h *authHandler) processRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	form := &authForm{
-		Username: r.PostFormValue("username"),
-		Email: r.PostFormValue("email"),
-		PasswordHash: r.PostFormValue("password"),
-	}
+	// 1. Extract and sanitize values first
+    username := strings.ToLower(strings.TrimSpace(r.PostFormValue("username")))
+    email := strings.ToLower(strings.TrimSpace(r.PostFormValue("email")))
+    password := r.PostFormValue("password") // Never lowercase passwords!
+
+	// 3. Build the clean form struct
+    form := &authForm{
+        Username: username,
+        Email:    email,
+        PasswordHash: password,
+    }
 
 	if !form.validate() {
 		slog.Error("Failed to register", "err", form.Errors)
