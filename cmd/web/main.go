@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io/fs"
 	"log"
 	"log/slog"
 	"net/http"
@@ -14,8 +15,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
+	"github.com/raffy-io/taskifyv3"
 	"github.com/raffy-io/taskifyv3/internal/auth"
 	taskifyDB "github.com/raffy-io/taskifyv3/internal/db"
+	"github.com/raffy-io/taskifyv3/internal/home"
 	"github.com/raffy-io/taskifyv3/internal/middleware"
 	"github.com/raffy-io/taskifyv3/internal/task"
 )
@@ -42,7 +45,6 @@ func main() {
 	defer pool.Close()
 
 	queries := taskifyDB.New(pool)
-	
 
 	//--- Initialize SCS Session Manager ---//
 	sessionDB := stdlib.OpenDBFromPool(pool)
@@ -54,17 +56,29 @@ func main() {
 
 	// routes
 	r := chi.NewRouter()
-	r.Use(sessionManager.LoadAndSave)
+
+	// -----static assets CSS JS IMG----- //
+	staticFS, err := fs.Sub(taskifyv3.EmbeddedAssets, "static")
+	if err != nil {
+		slog.Error("Cant find static assets", "error", err)
+		os.Exit(1)
+	}
+	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
 
 	// Public routes
 	r.Group(func(r chi.Router) {
-		r.Mount("/auth", auth.AuthRoutes(queries,sessionManager))
+		r.Use(sessionManager.LoadAndSave)
+		r.Use(middleware.NoSurf)
+		r.Mount("/auth", auth.AuthRoutes(queries, sessionManager))
+		r.Mount("/", home.HomeRoutes(sessionManager))
 	})
 
 	// Protected routes
 	r.Group(func(r chi.Router) {
+		r.Use(sessionManager.LoadAndSave)
 		r.Use(middleware.RequireAuth(sessionManager))
-		r.Mount("/task", task.TaskRoutes(queries,sessionManager))
+		r.Use(middleware.NoSurf)
+		r.Mount("/task", task.TaskRoutes(queries, sessionManager))
 	})
 
 	// server

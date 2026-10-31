@@ -1,0 +1,21 @@
+package task
+
+import "github.com/raffy-io/taskifyv3/internal/db"
+
+templ tasksList(tasks []db.Task) {
+	<section class="flex flex-col min-h-dvh justify-center items-center mx-auto">
+		if len(tasks) <= 0 {
+			<h1 class="text-8xl text-gray-50">no tasks yet</h1>
+		} else {
+			<ul>
+				for _,task := range tasks {
+					<li>{ task.Title }</li>
+				}
+			</ul>
+		}
+		<button
+			hx-delete="/auth/logout"
+			class="bg-red-500 text-red-50 px-3 py-0.5 flex justify-center items-center"
+		>logout</button>
+	</section>
+}

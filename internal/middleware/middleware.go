@@ -21,7 +21,6 @@ func GetUserID(ctx context.Context) (int64, bool) {
 	return id, ok
 }
 
-
 // RequireAuth checks the SCS session for a user_id and handles HTMX requests gracefully
 func RequireAuth(sessionManager *scs.SessionManager) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -30,8 +29,8 @@ func RequireAuth(sessionManager *scs.SessionManager) func(http.Handler) http.Han
 
 			// 1. Check if the user_id exists in the SCS session
 			if !sessionManager.Exists(ctx, "user_id") {
-		
-				// If it's an HTMX request, send HX-Redirect header so the browser 
+
+				// If it's an HTMX request, send HX-Redirect header so the browser
 				// performs a full page navigation instead of swapping the login HTML into a target div.
 				if r.Header.Get("HX-Request") == "true" {
 					slog.Info("Unauthenticated HTMX request, redirecting to login", "path", r.URL.Path)

@@ -7,8 +7,16 @@ templ Base(csrfToken string, contents templ.Component) {
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>Document</title>
+			<link rel="stylesheet" href="/static/css/output.css"/>
+			<script src="/static/js/alpine.min.js" defer></script>
+			<script src="/static/js/htmx.min.js" defer></script>
+			<script src="/static/js/main.js" defer></script>
 		</head>
-		<body hx-headers={ "{ \"X-CSRF-Token\": \"" + csrfToken + "\" }" }>
+		<body
+			hx-headers={ "{ \"X-CSRF-Token\": \"" + csrfToken + "\" }" }
+			class="bg-linear-to-r from-[#152331] to-[#000000]"
+			hx-boost="true"
+		>
 			<header></header>
 			<main>
 				@contents

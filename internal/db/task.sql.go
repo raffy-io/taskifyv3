@@ -48,6 +48,38 @@ func (q *Queries) DeleteTask(ctx context.Context, arg DeleteTaskParams) error {
 	return err
 }
 
+const listTasks = `-- name: ListTasks :many
+SELECT id, user_id, title, is_done, created_at
+FROM tasks
+WHERE user_id = $1
+`
+
+func (q *Queries) ListTasks(ctx context.Context, userID int64) ([]Task, error) {
+	rows, err := q.db.Query(ctx, listTasks, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Task
+	for rows.Next() {
+		var i Task
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Title,
+			&i.IsDone,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const toggleTaskStatus = `-- name: ToggleTaskStatus :one
 UPDATE tasks
 SET is_done = NOT is_done

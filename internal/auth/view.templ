@@ -1,0 +1,94 @@
+package auth
+
+// Just the Register form
+templ registerForm(form *authForm) {
+	<div id="register-form-wrapper" class="min-h-dvh flex flex-col justify-center w-full lg:w-1/2 lg:mx-auto px-4">
+		<form
+			id="register-form"
+			hx-post="/auth/register"
+			hx-target="#register-form-wrapper"
+			hx-swap="outerHTML"
+			class="flex flex-col gap-2.5 w-full"
+		>
+			<h2 class="font-black text-6xl capitalize bg-linear-to-r from-blue-500 to-pink-500 bg-clip-text text-transparent inline-block pb-1 leading-normal">
+				Register
+			</h2>
+			<div class="flex flex-col">
+				<label for="username" class="capitalize text-gray-50">username</label>
+				<input type="text" id="username" name="username" class="bg-gray-400 text-gray-900 px-2 py-1" value={ form.Username }/>
+				if msg := form.Errors["username"]; msg != "" {
+					<p class="text-xs text-red-500">{ msg }</p>
+				}
+			</div>
+			<div class="flex flex-col">
+				<label for="email" class="capitalize text-gray-50">email address</label>
+				<input type="email" id="email" name="email" class="bg-gray-400 text-gray-900 px-2 py-1" value={ form.Email }/>
+				if msg := form.Errors["email"]; msg != "" {
+					<p class="text-xs text-red-500">{ msg }</p>
+				}
+			</div>
+			<div class="flex flex-col">
+				<label for="password" class="capitalize text-gray-50">password</label>
+				<input type="password" id="password" name="password" class="bg-gray-400 text-gray-900 px-2 py-1"/>
+				if msg := form.Errors["password"]; msg != "" {
+					<p class="text-xs text-red-500">{ msg }</p>
+				}
+			</div>
+		</form>
+		<div class="flex items-center gap-2 mt-2">
+			<button
+				form="register-form"
+				class="capitalize px-3 py-1 bg-red-500 text-red-50 cursor-pointer"
+			>Register</button>
+			<a
+				href="/auth/login"
+				class="capitalize px-3 py-1 bg-gray-600 text-gray-50 cursor-pointer"
+			>
+				Login
+			</a>
+		</div>
+	</div>
+}
+
+// Just the Login form
+templ loginForm(form *authForm) {
+	<div id="login-form-wrapper" class="min-h-dvh flex flex-col justify-center w-full lg:w-1/2 lg:mx-auto px-4">
+		<form
+			id="login-form"
+			hx-post="/auth/login"
+			hx-target="#login-form-wrapper"
+			hx-swap="outerHTML"
+			class="flex flex-col gap-2.5 w-full"
+		>
+			<h2 class="font-black text-6xl capitalize bg-linear-to-r from-blue-500 to-pink-500 bg-clip-text text-transparent inline-block pb-1 leading-normal">
+				Login
+			</h2>
+			<div class="flex flex-col">
+				<label for="email" class="capitalize text-gray-50">email address</label>
+				<input type="email" id="email" name="email" class="bg-gray-400 text-gray-900 px-2 py-1" value={ form.Email }/>
+				if msg := form.Errors["email"]; msg != "" {
+					<p class="text-xs text-red-500">{ msg }</p>
+				}
+			</div>
+			<div class="flex flex-col">
+				<label for="password" class="capitalize text-gray-50">password</label>
+				<input type="password" id="password" name="password" class="bg-gray-400 text-gray-900 px-2 py-1"/>
+				if msg := form.Errors["password"]; msg != "" {
+					<p class="text-xs text-red-500">{ msg }</p>
+				}
+			</div>
+		</form>
+		<div class="flex items-center gap-2 mt-2">
+			<button
+				form="login-form"
+				class="capitalize px-3 py-1 bg-red-500 text-red-50 cursor-pointer"
+			>Login</button>
+			<a
+				href="/auth/register"
+				class="capitalize px-3 py-1 bg-gray-600 text-gray-50 cursor-pointer"
+			>
+				Register
+			</a>
+		</div>
+	</div>
+}

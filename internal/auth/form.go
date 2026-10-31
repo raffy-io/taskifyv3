@@ -13,11 +13,19 @@ type authForm struct {
 	Username     string
 	Email        string
 	PasswordHash string
-	Errors map[string]string
+	Errors       map[string]string
 }
 
 func (f *authForm) validate() bool {
 	f.Errors = make(map[string]string)
+
+	// Validate username
+	username := strings.TrimSpace(f.Username)
+	if utf8.RuneCountInString(username) > 60 {
+		f.addError("username", "Cannot exceed 60 characters.")
+	} else if utf8.RuneCountInString(username) < 3 {
+		f.addError("username", "Must be at least 5 characters.")
+	}
 
 	// Validate email
 	email := strings.TrimSpace(f.Email)
