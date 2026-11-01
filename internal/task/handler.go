@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
-	"strings"
+	"time"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi/v5"
@@ -21,19 +21,34 @@ type taskHandler struct {
 
 func (h *taskHandler) ServeUserTasks(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	form := newTaskForm("",0)
 	userID, ok := middleware.GetUserID(ctx)
 	if !ok {
-		slog.Error("Unauthorized attempt to create task")
+		slog.Error("Unauthorized attempt to fetch tasks")
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	tasks, err := h.Queries.ListTasks(ctx, userID)
+
+	// 1. Query the exact user by ID
+	user, err := h.Queries.GetUserByID(ctx, userID)
 	if err != nil {
-		slog.Error("Invalid user id")
+		slog.Error("Failed to fetch user by ID", "error", err, "user_id", userID)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
 	}
 
-	component := tasksList(tasks)
+	// 2. Query the user's tasks
+	tasks, err := h.Queries.ListTasks(ctx, userID)
+	if err != nil {
+		slog.Error("Failed to list tasks", "error", err, "user_id", userID)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// 3. Pass the username string to your component
+	component := tasksListPage(time.Now(), tasks, user.Username,form)
 	if err := h.Renderer.Render(w, r, component); err != nil {
+		slog.Error("Failed to render template", "error", err)
 		http.Error(w, "Failed to render template", http.StatusInternalServerError)
 		return
 	}
@@ -45,20 +60,14 @@ func (h *taskHandler) createTask(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
-
 	userID, ok := middleware.GetUserID(ctx)
 	if !ok {
-		slog.Error("Unauthorized attempt to create task")
+		slog.Error("Unauthorized")
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-
-	title := strings.TrimSpace(r.PostFormValue("title"))
-	form := &taskForm{
-		Title:  title,
-		UserID: &userID,
-	}
-	if !form.Validate() {
+	form := newTaskForm(r.PostFormValue("title"),userID)
+	if !form.validate() {
 		slog.Error("Failed to add task", "err", form.Errors)
 		http.Error(w, "Validation failed", http.StatusBadRequest)
 		return
