@@ -17,18 +17,18 @@ type authHandler struct {
 }
 
 // Initialize the auth handler struct
-func newAuthHandler(queries *db.Queries, session *scs.SessionManager, renderer *web.Renderer)*authHandler{
+func newAuthHandler(queries *db.Queries, session *scs.SessionManager, renderer *web.Renderer) *authHandler {
 	return &authHandler{
-        Queries:  queries,
-        Session:  session,
-        Renderer: renderer,
-    }
+		Queries:  queries,
+		Session:  session,
+		Renderer: renderer,
+	}
 }
 
 // authHandler Methods
 
 func (h *authHandler) ServeRegisterPage(w http.ResponseWriter, r *http.Request) {
-	form := newRegisterForm("","")
+	form := newRegisterForm("", "")
 	component := registerFormPage(form)
 	if err := h.Renderer.Render(w, r, component); err != nil {
 		slog.Error("Failed to render template", "err", err)
@@ -53,7 +53,7 @@ func (h *authHandler) processRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 3. Build the clean form struct
-	form := newRegisterForm(r.PostFormValue("username"),r.PostFormValue("email"))
+	form := newRegisterForm(r.PostFormValue("username"), r.PostFormValue("email"))
 
 	// separate validation for password to avoid leaving info in frontend
 	password := r.PostFormValue("password") // Never lowercase passwords!
@@ -108,7 +108,8 @@ func (h *authHandler) processLogin(w http.ResponseWriter, r *http.Request) {
 
 	// Initialize the form with submitted values and an empty Errors map
 	form := newLoginForm(r.PostFormValue("email"))
-	if !form.validate() {
+	password := r.PostFormValue("password")
+	if !form.validate(password) {
 		// 1. Return 422 UnprocessableEntity for validation failures
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		// 2. Render the Templ component with the form errors attached
@@ -119,7 +120,6 @@ func (h *authHandler) processLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	password := r.PostFormValue("password")
 	// 1. Check if email exists
 	user, err := h.Queries.GetUserByEmail(ctx, form.Email)
 	if err != nil {

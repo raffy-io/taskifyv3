@@ -21,7 +21,7 @@ type taskHandler struct {
 
 func (h *taskHandler) ServeUserTasks(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	form := newTaskForm("",0)
+	form := newTaskForm("", 0)
 	userID, ok := middleware.GetUserID(ctx)
 	if !ok {
 		slog.Error("Unauthorized attempt to fetch tasks")
@@ -46,7 +46,7 @@ func (h *taskHandler) ServeUserTasks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 3. Pass the username string to your component
-	component := tasksListPage(time.Now(), tasks, user.Username,form)
+	component := tasksListPage(time.Now(), tasks, user.Username, form)
 	if err := h.Renderer.Render(w, r, component); err != nil {
 		slog.Error("Failed to render template", "error", err)
 		http.Error(w, "Failed to render template", http.StatusInternalServerError)
@@ -66,10 +66,15 @@ func (h *taskHandler) createTask(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	form := newTaskForm(r.PostFormValue("title"),userID)
+	form := newTaskForm(r.PostFormValue("title"), userID)
 	if !form.validate() {
-		slog.Error("Failed to add task", "err", form.Errors)
-		http.Error(w, "Validation failed", http.StatusBadRequest)
+		// 1. Return 422 UnprocessableEntity for validation failures
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		// 2. Render the Templ component with the form errors attached
+		if err := createTaskForm(form, false).Render(ctx, w); err != nil {
+			slog.Error("Failed to render template", "err", err)
+		}
+		// 3. Stop execution so it doesn't proceed to user creation!
 		return
 	}
 
@@ -83,7 +88,43 @@ func (h *taskHandler) createTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	slog.Info("Successfully added task", "task", task.Title)
+	slog.Info("Successfully added task", "title", task.Title)
+
+	// 1. Query the exact user by ID
+	user, err := h.Queries.GetUserByID(ctx, userID)
+	if err != nil {
+		slog.Error("Failed to fetch user by ID", "error", err, "user_id", userID)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// 2. Query the user's tasks
+	tasks, err := h.Queries.ListTasks(ctx, userID)
+	if err != nil {
+		slog.Error("Failed to list tasks", "error", err, "user_id", userID)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// Render the OOB templates
+	w.WriteHeader(http.StatusOK)
+	if err := tasksHeading(time.Now(), user.Username, true).Render(ctx, w); err != nil {
+		http.Error(w, "Failed to render template", http.StatusInternalServerError)
+		return
+	}
+	if err := createTaskForm(form, true).Render(ctx, w); err != nil {
+		http.Error(w, "Failed to render template", http.StatusInternalServerError)
+		return
+	}
+	if err := tasksCounter(tasks, true).Render(ctx, w); err != nil {
+		http.Error(w, "Failed to render template", http.StatusInternalServerError)
+		return
+	}
+	if err := tasksList(tasks, true).Render(ctx, w); err != nil {
+		http.Error(w, "Failed to render template", http.StatusInternalServerError)
+		return
+	}
+
 }
 
 func (h *taskHandler) toggleTask(w http.ResponseWriter, r *http.Request) {

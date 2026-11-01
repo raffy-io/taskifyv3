@@ -13,7 +13,7 @@ func AuthRoutes(queries *db.Queries, sessionManager *scs.SessionManager) http.Ha
 	r := chi.NewRouter()
 
 	renderer := web.NewRenderer(sessionManager)
-	h := newAuthHandler(queries,sessionManager,renderer)
+	h := newAuthHandler(queries, sessionManager, renderer)
 
 	r.Get("/login", h.ServeLoginPage)
 	r.Get("/register", h.ServeRegisterPage)

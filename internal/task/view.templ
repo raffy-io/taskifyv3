@@ -22,20 +22,24 @@ templ tasksListPage(now time.Time, tasks []db.Task, username string, form *taskF
 	<section class="flex flex-col min-h-dvh mx-auto p-6 lg:px-24 text-gray-50">
 		@tasksHeading(now, username, false)
 		@tasksCounter(tasks, false)
-		@createTaskForm(form)
+		@createTaskForm(form, false)
+		<div>
+			<h3 class="capitalize font-thin text-xl">ready when you are</h3>
+		</div>
 		@tasksList(tasks, false)
 	</section>
 }
 
 templ tasksHeading(now time.Time, username string, isOOB bool) {
 	<div
+		id="task-heading"
 		class="mb-2"
 		if isOOB {
 			hx-swap-oob="true"
 		}
 	>
 		<div class="flex items-center justify-between mb-4">
-			<h2 class="capitalize text-xl md:text-3xl"><span class="font-thin">{ getGreeting(now) }</span> <span class="text-teal-600">, { username }</span></h2>
+			<h2 class="text-xl md:text-3xl"><span class="font-thin capitalize">{ getGreeting(now) },</span> <span class="font-display bg-linear-to-r from-yellow-500 via-amber-500 to-purple-500 bg-clip-text text-transparent">{ username }</span></h2>
 			<button
 				hx-delete="/auth/logout"
 				class="px-3 py-0.5 text-xs md:text-md lg:text-lg bg-red-500 capitalize cursor-pointer flex justify-center items-center rounded-sm"
@@ -47,6 +51,7 @@ templ tasksHeading(now time.Time, username string, isOOB bool) {
 
 templ tasksCounter(tasks []db.Task, isOOB bool) {
 	<div
+		id="task-counter"
 		class="flex justify-between items-center font-thin text-xs md:text-md lg:text-lg mb-5"
 		if isOOB {
 			hx-swap-oob="true"
@@ -65,12 +70,19 @@ templ tasksCounter(tasks []db.Task, isOOB bool) {
 	</div>
 }
 
-templ createTaskForm(form *taskForm) {
-	<div id="create-form-wrapper" class="mb-11 lg:mb-24">
+templ createTaskForm(form *taskForm, isOOB bool) {
+	<div
+		id="create-form-wrapper"
+		class="mb-11 lg:mb-24"
+		if isOOB {
+			hx-swap-oob="true"
+		}
+	>
 		<form
-			hx-post="/task/create"
+			hx-post="/task"
 			hx-target="#create-form-wrapper"
 			hx-swap="outerHTML"
+			hx-on::after-request="if(event.detail.successful) this.reset()"
 		>
 			<div class="flex flex-col gap-2">
 				<input
@@ -80,6 +92,9 @@ templ createTaskForm(form *taskForm) {
 					id="title"
 					name="title"
 				/>
+				if msg := form.Errors["title"]; msg != "" {
+					<p class="text-xs text-red-500">{ msg }</p>
+				}
 				<button
 					class="px-3 py-0.5 md:text-md lg:text-lg bg-linear-to-r from-blue-500 via-purple-500 to-pink-500 capitalize cursor-pointer flex justify-center items-center rounded-sm"
 				>add</button>
@@ -89,10 +104,12 @@ templ createTaskForm(form *taskForm) {
 }
 
 templ tasksList(tasks []db.Task, isOOB bool) {
-	<div>
-		<h3 class="capitalize font-thin text-xl">ready when you are</h3>
-	</div>
-	<ul>
+	<ul
+		id="tasks-list"
+		if isOOB {
+			hx-swap-oob="true"
+		}
+	>
 		for _,task := range tasks {
 			<li>{ task.Title }</li>
 		}

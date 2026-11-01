@@ -12,11 +12,11 @@ type taskForm struct {
 }
 
 // inititalize task form
-func newTaskForm(title string,userID int64) *taskForm{
+func newTaskForm(title string, userID int64) *taskForm {
 	return &taskForm{
-		Title: title,
+		Title:  title,
 		UserID: userID,
-		Errors:make(map[string]string),
+		Errors: make(map[string]string),
 	}
 }
 
