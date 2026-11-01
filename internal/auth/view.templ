@@ -1,7 +1,7 @@
 package auth
 
 // Just the Register form
-templ registerForm(form *authForm) {
+templ registerFormPage(form *registerForm) {
 	<div id="register-form-wrapper" class="min-h-dvh flex flex-col justify-center w-full lg:w-1/2 lg:mx-auto px-4">
 		<form
 			id="register-form"
@@ -51,7 +51,7 @@ templ registerForm(form *authForm) {
 }
 
 // Just the Login form
-templ loginForm(form *authForm) {
+templ loginFormPage(form *loginForm) {
 	<div id="login-form-wrapper" class="min-h-dvh flex flex-col justify-center w-full lg:w-1/2 lg:mx-auto px-4">
 		<form
 			id="login-form"

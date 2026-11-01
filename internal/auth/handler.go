@@ -3,7 +3,6 @@ package auth
 import (
 	"log/slog"
 	"net/http"
-	"strings"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/raffy-io/taskifyv3/internal/db"
@@ -17,9 +16,20 @@ type authHandler struct {
 	Renderer *web.Renderer
 }
 
+// Initialize the auth handler struct
+func newAuthHandler(queries *db.Queries, session *scs.SessionManager, renderer *web.Renderer)*authHandler{
+	return &authHandler{
+        Queries:  queries,
+        Session:  session,
+        Renderer: renderer,
+    }
+}
+
+// authHandler Methods
+
 func (h *authHandler) ServeRegisterPage(w http.ResponseWriter, r *http.Request) {
-	form := &authForm{}
-	component := registerForm(form)
+	form := newRegisterForm("","")
+	component := registerFormPage(form)
 	if err := h.Renderer.Render(w, r, component); err != nil {
 		slog.Error("Failed to render template", "err", err)
 		return
@@ -27,8 +37,8 @@ func (h *authHandler) ServeRegisterPage(w http.ResponseWriter, r *http.Request) 
 
 }
 func (h *authHandler) ServeLoginPage(w http.ResponseWriter, r *http.Request) {
-	form := &authForm{}
-	component := loginForm(form)
+	form := newLoginForm("")
+	component := loginFormPage(form)
 	if err := h.Renderer.Render(w, r, component); err != nil {
 		slog.Error("Failed to render template", "err", err)
 		return
@@ -42,31 +52,22 @@ func (h *authHandler) processRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 1. Extract and sanitize values first
-	username := strings.ToLower(strings.TrimSpace(r.PostFormValue("username")))
-	email := strings.ToLower(strings.TrimSpace(r.PostFormValue("email")))
-	password := r.PostFormValue("password") // Never lowercase passwords!
-
 	// 3. Build the clean form struct
-	form := &authForm{
-		Username:     username,
-		Email:        email,
-		PasswordHash: password,
-		Errors:       make(map[string]string),
-	}
+	form := newRegisterForm(r.PostFormValue("username"),r.PostFormValue("email"))
 
-	if !form.validate() {
+	// separate validation for password to avoid leaving info in frontend
+	password := r.PostFormValue("password") // Never lowercase passwords!
+	if !form.validate(password) {
 		// 1. Return 422 UnprocessableEntity for validation failures
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		// 2. Render the Templ component with the form errors attached
-		if err := registerForm(form).Render(ctx, w); err != nil {
+		if err := registerFormPage(form).Render(ctx, w); err != nil {
 			slog.Error("Failed to render template", "err", err)
 		}
-		// 3. Stop execution so it doesn't proceed to user creation!
 		return
 	}
 
-	hashedPassword, err := utils.HashPassword(form.PasswordHash)
+	hashedPassword, err := utils.HashPassword(password)
 	if err != nil {
 		http.Error(w, "Invalid Password", http.StatusInternalServerError)
 		return
@@ -106,20 +107,26 @@ func (h *authHandler) processLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Initialize the form with submitted values and an empty Errors map
-	form := &authForm{
-		Email:  r.PostFormValue("email"),
-		Errors: make(map[string]string),
+	form := newLoginForm(r.PostFormValue("email"))
+	if !form.validate() {
+		// 1. Return 422 UnprocessableEntity for validation failures
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		// 2. Render the Templ component with the form errors attached
+		if err := loginFormPage(form).Render(ctx, w); err != nil {
+			slog.Error("Failed to render template", "err", err)
+		}
+		// 3. Stop execution so it doesn't proceed to user creation!
+		return
 	}
-	password := r.PostFormValue("password")
 
+	password := r.PostFormValue("password")
 	// 1. Check if email exists
 	user, err := h.Queries.GetUserByEmail(ctx, form.Email)
 	if err != nil {
-		form.Errors["email"] = "email not found"
-
+		form.addError("email", "email not found")
 		// 1. Return 422 UnprocessableEntity for validation failures
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		if renderErr := loginForm(form).Render(ctx, w); renderErr != nil {
+		if renderErr := loginFormPage(form).Render(ctx, w); renderErr != nil {
 			slog.Error("Failed to render login template", "err", renderErr)
 		}
 		return
@@ -128,10 +135,9 @@ func (h *authHandler) processLogin(w http.ResponseWriter, r *http.Request) {
 	// 2. Check password
 	if !utils.CheckPassword(password, user.PasswordHash) {
 		form.Errors["password"] = "wrong password"
-
 		// Render template with 200 OK so HTMX swaps the form back in
-		w.WriteHeader(http.StatusOK)
-		if renderErr := h.Renderer.Render(w, r, loginForm(form)); renderErr != nil {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		if renderErr := loginFormPage(form).Render(ctx, w); renderErr != nil {
 			slog.Error("Failed to render login template", "err", renderErr)
 		}
 		return

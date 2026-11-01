@@ -6,49 +6,83 @@ import (
 	"unicode/utf8"
 )
 
-// Compile the regex once at package initialization.
 var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
 
-type authForm struct {
-	Username     string
-	Email        string
-	PasswordHash string
-	Errors       map[string]string
+type loginForm struct {
+    Email  string
+    Errors map[string]string
 }
 
-func (f *authForm) validate() bool {
-	f.Errors = make(map[string]string)
-
-	// Validate username
-	username := strings.TrimSpace(f.Username)
-	if utf8.RuneCountInString(username) > 60 {
-		f.addError("username", "Cannot exceed 60 characters.")
-	} else if utf8.RuneCountInString(username) < 3 {
-		f.addError("username", "Must be at least 5 characters.")
-	}
-
-	// Validate email
-	email := strings.TrimSpace(f.Email)
-	if utf8.RuneCountInString(email) < 5 {
-		f.addError("email", "Must be at least 5 characters.")
-	} else if !emailRegex.MatchString(email) {
-		f.addError("email", "Please enter a valid email address.")
-	}
-
-	// Validate password
-	password := strings.TrimSpace(f.PasswordHash)
-	if utf8.RuneCountInString(password) > 60 {
-		f.addError("password", "Cannot exceed 60 characters.")
-	} else if utf8.RuneCountInString(password) < 5 {
-		f.addError("password", "Must be at least 5 characters.")
-	}
-
-	return len(f.Errors) == 0
+// newLoginForm initializes loginForm and sanitizes the email (lowercase + trim)
+func newLoginForm(email string) *loginForm {
+    return &loginForm{
+        Email:  strings.ToLower(strings.TrimSpace(email)),
+        Errors: make(map[string]string),
+    }
 }
 
-func (f *authForm) addError(field, message string) {
-	if f.Errors == nil {
-		f.Errors = make(map[string]string)
-	}
-	f.Errors[field] = message
+type registerForm struct {
+    Username string
+    Email    string
+    Errors   map[string]string
+}
+
+// newRegisterForm initializes registerForm and sanitizes username and email (lowercase + trim)
+func newRegisterForm(username, email string) *registerForm {
+    return &registerForm{
+        Username: strings.ToLower(strings.TrimSpace(username)),
+        Email:    strings.ToLower(strings.TrimSpace(email)),
+        Errors:   make(map[string]string),
+    }
+}
+
+// Login form methods
+
+func (f *loginForm) validate() bool {
+    f.Errors = make(map[string]string)
+
+    // Since constructor already sanitized f.Email, we just validate it directly!
+    if f.Email == "" || !emailRegex.MatchString(f.Email) {
+        f.Errors["email"] = "Please enter a valid email address."
+    }
+
+    return len(f.Errors) == 0
+}
+
+func (f *loginForm) addError(field, message string) {
+    if f.Errors == nil {
+        f.Errors = make(map[string]string)
+    }
+    f.Errors[field] = message
+}
+
+// Register methods
+
+func (f *registerForm) validate(password string) bool {
+    f.Errors = make(map[string]string)
+
+    // Username is already lowercase & trimmed by the constructor
+    if utf8.RuneCountInString(f.Username) < 3 || utf8.RuneCountInString(f.Username) > 60 {
+        f.Errors["username"] = "Username must be between 3 and 60 characters."
+    }
+
+    // Email is already lowercase & trimmed by the constructor
+    if f.Email == "" || !emailRegex.MatchString(f.Email) {
+        f.Errors["email"] = "Please enter a valid email address."
+    }
+
+    // Passwords: ONLY trim space, NEVER lowercase!
+    passwordStr := strings.TrimSpace(password)
+    if utf8.RuneCountInString(passwordStr) < 3 || utf8.RuneCountInString(passwordStr) > 60 {
+        f.Errors["password"] = "Password must be between 3 and 60 characters."
+    }
+
+    return len(f.Errors) == 0
+}
+
+func (f *registerForm) addError(field, message string) {
+    if f.Errors == nil {
+        f.Errors = make(map[string]string)
+    }
+    f.Errors[field] = message
 }
