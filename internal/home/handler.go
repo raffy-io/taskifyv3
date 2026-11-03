@@ -68,7 +68,7 @@ func (h *homeHandler) ServeEditHomepage(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-const maxUploadSize = 10 << 20 // 10 MB
+const maxUploadSize = 15 << 20 // 10 MB
 func (h *homeHandler) ProcessUpdateHomepage(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
