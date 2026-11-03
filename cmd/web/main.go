@@ -12,6 +12,7 @@ import (
 
 	"github.com/alexedwards/scs/postgresstore"
 	"github.com/alexedwards/scs/v2"
+	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
@@ -69,8 +70,21 @@ func main() {
 	sessionManager.Cookie.HttpOnly = true
 	sessionManager.Cookie.SameSite = http.SameSiteStrictMode
 
+	// Automatically loads from the CLOUDINARY_URL environment variable
+	cld, err := cloudinary.NewFromURL(os.Getenv("CLOUDINARY_URL"))
+	if err != nil {
+		log.Fatalf("Failed to initialize Cloudinary: %v", err)
+	}
+
 	// routes
 	r := chi.NewRouter()
+
+	// --- 1. Global Middlewares ---
+    // Initialize rate limiter: e.g., 20 requests per interval check, with burst capacity
+    limiter := middleware.NewRateLimiter(20, 50, time.Minute)
+    
+    r.Use(limiter.Middleware)           // Protect against spam/DDoS
+    r.Use(middleware.UserAgentValidator) // Block empty/blank scrapers
 
 	// -----static assets CSS JS IMG----- //
 	staticFS, err := fs.Sub(taskifyv3.EmbeddedAssets, "static")
@@ -85,7 +99,7 @@ func main() {
 		r.Use(sessionManager.LoadAndSave)
 		r.Use(middleware.NoSurf)
 		r.Mount("/auth", auth.AuthRoutes(queries, sessionManager))
-		r.Mount("/", home.HomeRoutes(queries, sessionManager))
+		r.Mount("/", home.HomeRoutes(queries, sessionManager,cld))
 	})
 
 	// Protected user routes
@@ -103,7 +117,7 @@ func main() {
 		r.Use(middleware.RequireAdmin(sessionManager))
 		r.Use(middleware.NoSurf)
 
-		r.Mount("/admin",home.AdminRoutes(queries,sessionManager))
+		r.Mount("/admin",home.AdminRoutes(queries,sessionManager,cld))
 	})
 
 	// server

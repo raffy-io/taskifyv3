@@ -6,6 +6,7 @@ require (
 	github.com/a-h/templ v0.3.1100
 	github.com/alexedwards/scs/postgresstore v0.0.0-20251002162104-209de6e426de
 	github.com/alexedwards/scs/v2 v2.9.0
+	github.com/cloudinary/cloudinary-go/v2 v2.16.1
 	github.com/go-chi/chi/v5 v5.5.0
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/joho/godotenv v1.5.1
@@ -22,8 +23,11 @@ require (
 	github.com/andybalholm/brotli v1.2.7 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cli/browser v1.3.0 // indirect
+	github.com/creasty/defaults v1.7.0 // indirect
 	github.com/fatih/color v1.19.0 // indirect
 	github.com/fsnotify/fsnotify v1.10.1 // indirect
+	github.com/google/uuid v1.6.0 // indirect
+	github.com/gorilla/schema v1.4.1 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/puddle/v2 v2.2.3 // indirect

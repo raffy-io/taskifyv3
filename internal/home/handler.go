@@ -1,13 +1,14 @@
 package home
 
 import (
+	"bytes"
 	"errors"
 	"log/slog"
 	"net/http"
-	"os"
-	"path/filepath"
 
 	"github.com/alexedwards/scs/v2"
+	"github.com/cloudinary/cloudinary-go/v2"
+	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 	"github.com/raffy-io/taskifyv3/internal/db"
 	"github.com/raffy-io/taskifyv3/internal/imageutil"
 	"github.com/raffy-io/taskifyv3/internal/web"
@@ -17,13 +18,15 @@ type homeHandler struct {
 	Renderer *web.Renderer
 	Queries  *db.Queries
 	Session  *scs.SessionManager
+	Cld       *cloudinary.Cloudinary 
 }
 
-func newHomeHandler(renderer *web.Renderer, queries *db.Queries, session *scs.SessionManager) *homeHandler {
+func newHomeHandler(renderer *web.Renderer, queries *db.Queries, session *scs.SessionManager,cld *cloudinary.Cloudinary) *homeHandler {
 	return &homeHandler{
 		Renderer: renderer,
 		Queries:  queries,
 		Session:  session,
+		Cld: cld,
 	}
 }
 
@@ -111,20 +114,24 @@ func (h *homeHandler) ProcessUpdateHomepage(w http.ResponseWriter, r *http.Reque
 			return
 		}
 
-		uploadDir := filepath.Join("static", "uploads")
-		if err := os.MkdirAll(uploadDir, 0755); err != nil {
-			http.Error(w, "Failed to create upload directory", http.StatusInternalServerError)
-			return
-		}
+		// --- UPLOAD TO CLOUDINARY INSTEAD OF LOCAL DISK ---
+        // We pass the raw webpImage bytes using bytes.NewReader
+        uploadResult, err := h.Cld.Upload.Upload(
+            ctx,
+            bytes.NewReader(webpImage),
+            uploader.UploadParams{
+                Folder:   "taskify/hero", // Optional: organizes files in a folder on your Cloudinary dashboard
+                PublicID: "hero_image",   // Optional: fixed name so it overwrites/updates cleanly, or omit for random hash
+            },
+        )
+        if err != nil {
+            slog.Error("Failed to upload image to Cloudinary", "err", err)
+            http.Error(w, "Failed to upload image to cloud", http.StatusInternalServerError)
+            return
+        }
 
-		destPath := filepath.Join(uploadDir, "hero.webp")
-		if err := os.WriteFile(destPath, webpImage, 0644); err != nil {
-			http.Error(w, "Failed to save file", http.StatusInternalServerError)
-			return
-		}
-
-		// Assign the new path since validation and saving succeeded
-		imagePath = destPath
+        // Assign the secure HTTPS cloud URL returned by Cloudinary
+        imagePath = uploadResult.SecureURL
 
 	} else if !errors.Is(err, http.ErrMissingFile) {
 		form := newEditHomepageForm(title, subtitle, existing.HomeImage, imageAlt)
