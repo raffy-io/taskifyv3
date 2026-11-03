@@ -129,7 +129,7 @@ func (h *authHandler) processRegister(w http.ResponseWriter, r *http.Request) {
 
 	// 4. Set session user_id
 	h.Session.Put(ctx, "user_id", user.ID)
-	h.Session.Put(ctx, "role", user.Role) 
+	h.Session.Put(ctx, "role", user.Role)
 
 	// 5. Redirect straight to app dashboard
 	w.Header().Set("HX-Location", "/task")
@@ -188,7 +188,7 @@ func (h *authHandler) processLogin(w http.ResponseWriter, r *http.Request) {
 
 	// 4. Put user_id into session
 	h.Session.Put(ctx, "user_id", user.ID)
-	h.Session.Put(ctx, "role", user.Role) 
+	h.Session.Put(ctx, "role", user.Role)
 
 	// 5. Send HX-Redirect header for HTMX clients
 	w.Header().Set("HX-Location", "/task")

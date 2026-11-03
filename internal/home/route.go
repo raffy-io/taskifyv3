@@ -14,7 +14,7 @@ func HomeRoutes(queries *db.Queries, sessionManager *scs.SessionManager, cld *cl
 	r := chi.NewRouter()
 
 	renderer := web.NewRenderer(sessionManager)
-	h := newHomeHandler(renderer, queries, sessionManager,cld)
+	h := newHomeHandler(renderer, queries, sessionManager, cld)
 
 	r.Get("/", h.ServeHomepage)
 
@@ -25,7 +25,7 @@ func AdminRoutes(queries *db.Queries, sessionManager *scs.SessionManager, cld *c
 	r := chi.NewRouter()
 
 	renderer := web.NewRenderer(sessionManager)
-	h := newHomeHandler(renderer, queries, sessionManager,cld)
+	h := newHomeHandler(renderer, queries, sessionManager, cld)
 
 	r.Get("/home/edit", h.ServeEditHomepage)
 	r.Patch("/home/edit", h.ProcessUpdateHomepage)

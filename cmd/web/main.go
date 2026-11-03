@@ -80,11 +80,11 @@ func main() {
 	r := chi.NewRouter()
 
 	// --- 1. Global Middlewares ---
-    // Initialize rate limiter: e.g., 20 requests per interval check, with burst capacity
-    limiter := middleware.NewRateLimiter(20, 50, time.Minute)
-    
-    r.Use(limiter.Middleware)           // Protect against spam/DDoS
-    r.Use(middleware.UserAgentValidator) // Block empty/blank scrapers
+	// Initialize rate limiter: e.g., 20 requests per interval check, with burst capacity
+	limiter := middleware.NewRateLimiter(20, 50, time.Minute)
+
+	r.Use(limiter.Middleware)            // Protect against spam/DDoS
+	r.Use(middleware.UserAgentValidator) // Block empty/blank scrapers
 
 	// -----static assets CSS JS IMG----- //
 	staticFS, err := fs.Sub(taskifyv3.EmbeddedAssets, "static")
@@ -99,7 +99,7 @@ func main() {
 		r.Use(sessionManager.LoadAndSave)
 		r.Use(middleware.NoSurf)
 		r.Mount("/auth", auth.AuthRoutes(queries, sessionManager))
-		r.Mount("/", home.HomeRoutes(queries, sessionManager,cld))
+		r.Mount("/", home.HomeRoutes(queries, sessionManager, cld))
 	})
 
 	// Protected user routes
@@ -117,7 +117,7 @@ func main() {
 		r.Use(middleware.RequireAdmin(sessionManager))
 		r.Use(middleware.NoSurf)
 
-		r.Mount("/admin",home.AdminRoutes(queries,sessionManager,cld))
+		r.Mount("/admin", home.AdminRoutes(queries, sessionManager, cld))
 	})
 
 	// server
