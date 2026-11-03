@@ -55,7 +55,7 @@ func homepage(home db.Homepage) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" class=\"absolute top-0 left-0 right-0 bottom-0 min-h-dvh z-0\"><div class=\"absolute inset-0 bg-black/50 z-1\"></div><div class=\"relative z-2 flex flex-col items-center justify-center\"><h1 class=\"capitalize text-8xl font-black mb-2 bg-linear-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" class=\"absolute top-0 left-0 right-0 bottom-0 min-h-dvh object-cover z-0\"><div class=\"absolute inset-0 bg-black/75 z-1\"></div><div class=\"relative z-2 flex flex-col items-center justify-center\"><h1 class=\"capitalize text-7xl md:text-8xl font-black mb-2 bg-linear-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
