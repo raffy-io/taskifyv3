@@ -19,11 +19,12 @@ import (
 
 const (
 	MaxImageWidth    = 1920
-	MaxAllowedWidth  = 12000 // Lowered slightly to prevent extreme memory exhaustion attacks
-	MaxAllowedHeight = 12000
+	MaxAllowedWidth  = 15000
+	MaxAllowedHeight = 15000
 )
 
 // ValidateImage checks file size, extension, structural integrity, and dimensions
+// using any io.ReadSeeker, making it reusable across HTTP, CLI, and S3.
 func ValidateImage(r io.ReadSeeker, filename string, fileSize int64, maxBytes int64) error {
 	if fileSize > maxBytes {
 		return errors.New("image size exceeds the maximum allowed limit")
@@ -34,7 +35,6 @@ func ValidateImage(r io.ReadSeeker, filename string, fileSize int64, maxBytes in
 		return errors.New("invalid image format. Only JPEG, PNG, WebP, and AVIF are allowed")
 	}
 
-	// DecodeConfig only reads headers, keeping memory usage near zero!
 	config, _, err := image.DecodeConfig(r)
 	if err != nil {
 		return errors.New("invalid or corrupted image file structure")
@@ -59,7 +59,7 @@ func ProcessImage(r io.ReadSeeker, filename string, quality int) ([]byte, error)
 
 	if ext == ".webp" {
 		config, _, err := image.DecodeConfig(r)
-		_, _ = r.Seek(0, io.SeekStart)
+		r.Seek(0, io.SeekStart)
 
 		if err == nil && config.Width <= MaxImageWidth {
 			bytesData, readErr := io.ReadAll(r)
@@ -67,22 +67,19 @@ func ProcessImage(r io.ReadSeeker, filename string, quality int) ([]byte, error)
 				return bytesData, nil
 			}
 		}
-		_, _ = r.Seek(0, io.SeekStart)
+		r.Seek(0, io.SeekStart)
 	}
 
 	return CompressImage(r, quality)
 }
 
-// CompressImage takes any io.Reader, decodes, resizes, and returns WebP bytes efficiently
+// CompressImage takes any io.Reader, resizes if too large, and returns WebP bytes
 func CompressImage(r io.Reader, quality int) ([]byte, error) {
-	// Note: High-res images decode fully into memory here. 
-	// Ensure your HTTP server ReadTimeout/WriteTimeout are set to at least 30s-60s!
 	img, _, err := image.Decode(r)
 	if err != nil {
 		return nil, err
 	}
 
-	// Resize immediately to drop high-res memory footprint before encoding
 	img = resizeIfNeeded(img, MaxImageWidth)
 
 	var buf bytes.Buffer
@@ -110,7 +107,6 @@ func resizeIfNeeded(src image.Image, maxWidth int) image.Image {
 	targetWidth := maxWidth
 	targetHeight := (origHeight * targetWidth) / origWidth
 
-	// Allocate destination canvas explicitly matching the smaller target size
 	dst := image.NewRGBA(image.Rect(0, 0, targetWidth, targetHeight))
 	draw.BiLinear.Scale(dst, dst.Bounds(), src, bounds, draw.Over, nil)
 
