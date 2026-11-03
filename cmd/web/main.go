@@ -123,13 +123,13 @@ func main() {
 	// server
 	port := os.Getenv("PORT")
 	srv := &http.Server{
-		Addr:              ":" + port,
-		Handler:           r,
-		ReadHeaderTimeout: 5 * time.Second,  // Protects against Slowloris attacks
-		ReadTimeout:       15 * time.Second, // Total time to read headers + body
-		WriteTimeout:      15 * time.Second, // Total time to write the response
-		IdleTimeout:       60 * time.Second, // Keep-alive connection cleanup
-	}
+    Addr:              ":" + port,
+    Handler:           r,
+    ReadHeaderTimeout: 5 * time.Second,  
+    ReadTimeout:       30 * time.Second, // Increased to give large uploads time to finish reading
+    WriteTimeout:      30 * time.Second, // Increased to wait for Cloudinary response / HTML rendering
+    IdleTimeout:       60 * time.Second, 
+}
 
 	slog.Info("Server is running", "addr", srv.Addr)
 	if err := srv.ListenAndServe(); err != nil {
