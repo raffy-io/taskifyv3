@@ -71,3 +71,36 @@ func NoSurf(next http.Handler) http.Handler {
 
 	return csrfHandler
 }
+
+func RequireAdmin(sessionManager *scs.SessionManager) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+
+			// 1. Check if the user is an admin in the SCS session
+			role := sessionManager.GetString(ctx, "role")
+			if role != "admin" {
+				// If it's an HTMX request, send HX-Redirect to send them back to safety (e.g., home or login)
+				if r.Header.Get("HX-Request") == "true" {
+					slog.Warn("Unauthorized HTMX admin request", "path", r.URL.Path)
+					w.Header().Set("HX-Redirect", "/")
+					w.WriteHeader(http.StatusSeeOther)
+					return
+				}
+
+				slog.Warn("Unauthorized admin request", "path", r.URL.Path)
+				http.Redirect(w, r, "/", http.StatusSeeOther)
+				return
+			}
+
+			// 2. Fetch the user ID from the session (useful for audit logs or admin actions)
+			userID := sessionManager.GetInt64(ctx, "user_id")
+
+			// 3. Store the user ID in the request context using your custom type key
+			ctx = context.WithValue(ctx, UserIDKey, userID)
+
+			// 4. Move on to the actual admin handler
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}

@@ -66,6 +66,41 @@ func (h *authHandler) processRegister(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	// 2. Syntax passed! Now check database uniqueness using SQLC
+	usernameExists, err := h.Queries.CheckUsernameExists(ctx, form.Username)
+	if err != nil {
+		slog.Error("Failed to check user uniqueness", "err", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	if usernameExists {
+		form.addError("username", "This username is already taken.")
+
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		if err := registerFormPage(form).Render(ctx, w); err != nil {
+			slog.Error("Failed to render template", "err", err)
+		}
+		return
+	}
+
+	// 2. Syntax passed! Now check database uniqueness using SQLC
+	emailExists, err := h.Queries.CheckEmailExists(ctx, form.Email)
+	if err != nil {
+		slog.Error("Failed to check email uniqueness", "err", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	if emailExists {
+		form.addError("email", "This email address is already registered.")
+
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		if err := registerFormPage(form).Render(ctx, w); err != nil {
+			slog.Error("Failed to render template", "err", err)
+		}
+		return
+	}
 
 	hashedPassword, err := utils.HashPassword(password)
 	if err != nil {
@@ -94,6 +129,7 @@ func (h *authHandler) processRegister(w http.ResponseWriter, r *http.Request) {
 
 	// 4. Set session user_id
 	h.Session.Put(ctx, "user_id", user.ID)
+	h.Session.Put(ctx, "role", user.Role) 
 
 	// 5. Redirect straight to app dashboard
 	w.Header().Set("HX-Location", "/task")
@@ -152,6 +188,7 @@ func (h *authHandler) processLogin(w http.ResponseWriter, r *http.Request) {
 
 	// 4. Put user_id into session
 	h.Session.Put(ctx, "user_id", user.ID)
+	h.Session.Put(ctx, "role", user.Role) 
 
 	// 5. Send HX-Redirect header for HTMX clients
 	w.Header().Set("HX-Location", "/task")

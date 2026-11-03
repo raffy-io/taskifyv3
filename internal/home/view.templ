@@ -1,14 +1,69 @@
 package home
 
-templ homepage() {
-	<section class="p-5 md:px-24 flex flex-col items-center justify-center h-dvh">
-		<h1
-			class="capitalize text-8xl font-black mb-2 bg-linear-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent"
-		>welcome</h1>
-		<p class="text-gray-50 mb-4">Lorem ipsum dolor sit amet consectetur adipisicing elit. Ad perferendis ullam doloremque, nulla provident molestiae soluta suscipit mollitia quod, earum ipsum culpa? Culpa voluptas, quos explicabo corrupti nemo quod provident!</p>
-		<a
-			href="/task"
-			class="flex items-center justify-center capitalize px-3 py-1 bg-red-500 text-red-50 hover:bg-red-400 hover:-translate-y-0.5 active:bg-red-500 active:translate-y-0 transition-all 3s rounded-sm"
-		>get started</a>
+import "fmt"
+import "github.com/raffy-io/taskifyv3/internal/db"
+
+templ homepage(home db.Homepage) {
+	<section class="p-5 md:px-24 flex flex-col items-center justify-center min-h-dvh relative">
+		<img
+			src={ home.HomeImage }
+			alt={ home.HomeImageAlt }
+			class="absolute top-0 left-0 right-0 bottom-0 min-h-dvh z-0"
+		/>
+		<div class="absolute inset-0 bg-black/50 z-1"></div>
+		<div class="relative z-2 flex flex-col items-center justify-center ">
+			<h1
+				class="capitalize text-8xl font-black mb-2 bg-linear-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent"
+			>{ home.Title }</h1>
+			<p class="text-gray-50 mb-4">{ home.Subtitle }</p>
+			<a
+				href="/task"
+				class="flex items-center justify-center capitalize px-3 py-1 bg-red-500 text-red-50 hover:bg-red-400 hover:-translate-y-0.5 active:bg-red-500 active:translate-y-0 transition-all 3s rounded-sm"
+			>get started</a>
+		</div>
 	</section>
+}
+
+templ homepageEditor(form *editHomepageForm) {
+	<div class="p-5 md:px-24 flex flex-col items-center justify-center h-dvh">
+		<div class="max-w-xl mx-auto p-6 bg-olive-200 text-olive-900 rounded shadow">
+			<h2 class="text-2xl font-bold mb-4 bg-linear-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">Edit Hero Section</h2>
+			<form
+				hx-patch="/admin/home/edit"
+				hx-encoding="multipart/form-data"
+				hx-target="#result"
+				class="space-y-4"
+				hx-disabled-elt="form button"
+			>
+				<div>
+					<label class="block text-sm font-medium">Title</label>
+					<input type="text" name="title" value={ form.Title } class="w-full border p-2 rounded" required/>
+				</div>
+				<div>
+					<label class="block text-sm font-medium ">Subtitle</label>
+					<input type="text" name="subtitle" value={ form.Subtitle } class="w-full border p-2 rounded" required/>
+				</div>
+				// --- ALPINE.JS IMAGE PREVIEW WRAPPER ---
+				<div x-data={ fmt.Sprintf("{ previewUrl: '%s' }", form.HomeImage) }>
+					<label class="block text-sm font-medium ">Hero Image (Converts to WebP automatically)</label>
+					// Uses Alpine's :src reactive binding
+					<img :src="previewUrl" alt={ form.HomeImageAlt } class="w-32 h-32 object-cover mb-2 rounded border"/>
+					<input
+						type="file"
+						name="home_image"
+						accept="image/*"
+						class="w-full border p-2 rounded"
+						@change="previewUrl = URL.createObjectURL($event.target.files[0])"
+					/>
+				</div>
+				// ---------------------------------------
+				<div>
+					<label class="block text-sm font-medium ">Image Alt Text</label>
+					<input type="text" name="home_image_alt" value={ form.HomeImageAlt } class="w-full border p-2 rounded" required/>
+				</div>
+				<button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-500 disabled:cursor-not-allowed">Save Changes</button>
+			</form>
+			<div id="result" class="mt-4 text-sm font-semibold"></div>
+		</div>
+	</div>
 }

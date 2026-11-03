@@ -1,6 +1,7 @@
 package task
 
 import (
+	"fmt"
 	"github.com/raffy-io/taskifyv3/internal/db"
 	"strconv"
 	"time"
@@ -24,7 +25,7 @@ templ tasksListPage(now time.Time, tasks []db.Task, username string, form *taskF
 		@tasksCounter(tasks, false)
 		@createTaskForm(form, false)
 		<div>
-			<h3 class="capitalize font-thin text-xl">ready when you are</h3>
+			<h3 class="capitalize font-thin text-2xl mb-6">ready when you are</h3>
 		</div>
 		@tasksList(tasks, false)
 	</section>
@@ -58,7 +59,11 @@ templ tasksCounter(tasks []db.Task, isOOB bool) {
 		}
 	>
 		<h5>Hola!</h5>
-		if len(tasks) > 0 {
+		if len(tasks) == 1 {
+			<p>
+				<span class="font-semibold text-md">{ strconv.Itoa(len(tasks)) }</span> task need to be done
+			</p>
+		} else if len(tasks) > 0 {
 			<p>
 				<span class="font-semibold text-md">{ strconv.Itoa(len(tasks)) }</span> tasks need to be done
 			</p>
@@ -106,12 +111,41 @@ templ createTaskForm(form *taskForm, isOOB bool) {
 templ tasksList(tasks []db.Task, isOOB bool) {
 	<ul
 		id="tasks-list"
+		class="flex flex-col gap-6"
 		if isOOB {
 			hx-swap-oob="true"
 		}
 	>
-		for _,task := range tasks {
-			<li>{ task.Title }</li>
+		for i, task := range tasks {
+			<div class="flex flex-col">
+				@tasksListItem(i, task)
+			</div>
 		}
 	</ul>
+}
+
+templ tasksListItem(index int, task db.Task) {
+	<li
+		class="flex flex-col p-6 bg-olive-800 rounded-tl-3xl rounded-br-3xl shadow-xs"
+		x-data={ fmt.Sprintf("{is_done:%t}", task.IsDone.Bool) }
+		hx-patch={ fmt.Sprintf("/task/%v/toggle", task.ID) }
+		hx-target="#tasks-list"
+		hx-swap="outerHTML"
+	>
+		<span class="text-xs text-gray-400 mb-6">
+			{ task.CreatedAt.Time.Format("Jan 02, 2006 15:04") }
+		</span>
+		<div class="flex items-center justify-center mb-6 h-7 w-7 rounded-full border border-sky-500">
+			<span x-show="is_done">&check;</span>
+			<span x-show="!is_done">{ index + 1 }</span>
+		</div>
+		<span class="mb-4 text-xl font-semibold" :class="is_done ? 'line-through text-teal-500':'' ">{ task.Title }</span>
+		<button
+			@click.stop
+			hx-delete={ fmt.Sprintf("/task/%d", task.ID) }
+			hx-target="closest li"
+			hx-swap="outerHTML"
+			class="self-start py-0.5 px-3 bg-pink-500 text-pink text-sm capitalize rounded-sm"
+		>remove</button>
+	</li>
 }

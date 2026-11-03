@@ -9,10 +9,32 @@ import (
 	"context"
 )
 
+const checkEmailExists = `-- name: CheckEmailExists :one
+SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)
+`
+
+func (q *Queries) CheckEmailExists(ctx context.Context, email string) (bool, error) {
+	row := q.db.QueryRow(ctx, checkEmailExists, email)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const checkUsernameExists = `-- name: CheckUsernameExists :one
+SELECT EXISTS(SELECT 1 FROM users WHERE username = $1)
+`
+
+func (q *Queries) CheckUsernameExists(ctx context.Context, username string) (bool, error) {
+	row := q.db.QueryRow(ctx, checkUsernameExists, username)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (username,email,password_hash)
 VALUES ($1, $2, $3)
-RETURNING id, username, email, password_hash, created_at
+RETURNING id, username, email, password_hash, role, created_at
 `
 
 type CreateUserParams struct {
@@ -29,13 +51,14 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Username,
 		&i.Email,
 		&i.PasswordHash,
+		&i.Role,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, username, email, password_hash, created_at
+SELECT id, username, email, password_hash, role, created_at
 FROM users
 WHERE email = $1
 LIMIT 1
@@ -49,13 +72,14 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Username,
 		&i.Email,
 		&i.PasswordHash,
+		&i.Role,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, username, email, password_hash, created_at
+SELECT id, username, email, password_hash, role, created_at
 FROM users
 WHERE id = $1
 LIMIT 1
@@ -69,6 +93,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id int64) (User, error) {
 		&i.Username,
 		&i.Email,
 		&i.PasswordHash,
+		&i.Role,
 		&i.CreatedAt,
 	)
 	return i, err

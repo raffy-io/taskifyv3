@@ -8,6 +8,14 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Homepage struct {
+	ID           int64
+	Title        string
+	Subtitle     string
+	HomeImage    string
+	HomeImageAlt string
+}
+
 type Session struct {
 	Token  string
 	Data   []byte
@@ -27,5 +35,6 @@ type User struct {
 	Username     string
 	Email        string
 	PasswordHash string
+	Role         string
 	CreatedAt    pgtype.Timestamptz
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"io/fs"
 	"log"
 	"log/slog"
@@ -36,6 +37,20 @@ func main() {
 		log.Fatalf("DB_URL environment variable is required")
 	}
 
+	//--- Database Connection for Migrations & Sessions ---//
+	// Goose and SCS both use standard database/sql connections (*sql.DB)
+	sessionDB, err := sql.Open("pgx", dbURL)
+	if err != nil {
+		log.Fatalf("failed to open database connection: %v", err)
+	}
+	defer sessionDB.Close()
+
+	// Run auto-migrations on startup
+	if err := taskifyv3.RunMigrations(sessionDB); err != nil {
+		log.Fatalf("migration failed: %v", err)
+	}
+	log.Println("Migrations applied successfully!")
+
 	//--- Create Connection Pool for SQLC ---//
 	pool, err := pgxpool.New(ctx, dbURL)
 	if err != nil {
@@ -47,7 +62,7 @@ func main() {
 	queries := taskifyDB.New(pool)
 
 	//--- Initialize SCS Session Manager ---//
-	sessionDB := stdlib.OpenDBFromPool(pool)
+	sessionDB = stdlib.OpenDBFromPool(pool)
 	sessionManager = scs.New()
 	sessionManager.Store = postgresstore.New(sessionDB)
 	sessionManager.Lifetime = 24 * time.Hour
@@ -70,15 +85,25 @@ func main() {
 		r.Use(sessionManager.LoadAndSave)
 		r.Use(middleware.NoSurf)
 		r.Mount("/auth", auth.AuthRoutes(queries, sessionManager))
-		r.Mount("/", home.HomeRoutes(sessionManager))
+		r.Mount("/", home.HomeRoutes(queries, sessionManager))
 	})
 
-	// Protected routes
+	// Protected user routes
 	r.Group(func(r chi.Router) {
 		r.Use(sessionManager.LoadAndSave)
 		r.Use(middleware.RequireAuth(sessionManager))
 		r.Use(middleware.NoSurf)
 		r.Mount("/task", task.TaskRoutes(queries, sessionManager))
+	})
+
+	// Protected admin routes
+	r.Group(func(r chi.Router) {
+		r.Use(sessionManager.LoadAndSave)
+		r.Use(middleware.RequireAuth(sessionManager))
+		r.Use(middleware.RequireAdmin(sessionManager))
+		r.Use(middleware.NoSurf)
+
+		r.Mount("/admin",home.AdminRoutes(queries,sessionManager))
 	})
 
 	// server

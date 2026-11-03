@@ -157,6 +157,21 @@ func (h *taskHandler) toggleTask(w http.ResponseWriter, r *http.Request) {
 
 	slog.Info("Successfully updated task", "task", task.Title)
 
+	// 2. Query the user's tasks
+	tasks, err := h.Queries.ListTasks(ctx, userID)
+	if err != nil {
+		slog.Error("Failed to list tasks", "error", err, "user_id", userID)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// Render the OOB templates
+	w.WriteHeader(http.StatusOK)
+	if err := tasksList(tasks, true).Render(ctx, w); err != nil {
+		http.Error(w, "Failed to render template", http.StatusInternalServerError)
+		return
+	}
+
 }
 func (h *taskHandler) deleteTask(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -189,5 +204,34 @@ func (h *taskHandler) deleteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	slog.Info("Successfully deleted task", "task_id", taskID, "user_id", userID)
+	// 1. Query the exact user by ID
+	user, err := h.Queries.GetUserByID(ctx, userID)
+	if err != nil {
+		slog.Error("Failed to fetch user by ID", "error", err, "user_id", userID)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// 2. Query the user's tasks
+	tasks, err := h.Queries.ListTasks(ctx, userID)
+	if err != nil {
+		slog.Error("Failed to list tasks", "error", err, "user_id", userID)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// Render the OOB templates
+	w.WriteHeader(http.StatusOK)
+	if err := tasksHeading(time.Now(), user.Username, true).Render(ctx, w); err != nil {
+		http.Error(w, "Failed to render template", http.StatusInternalServerError)
+		return
+	}
+	if err := tasksCounter(tasks, true).Render(ctx, w); err != nil {
+		http.Error(w, "Failed to render template", http.StatusInternalServerError)
+		return
+	}
+	if err := tasksList(tasks, true).Render(ctx, w); err != nil {
+		http.Error(w, "Failed to render template", http.StatusInternalServerError)
+		return
+	}
 }

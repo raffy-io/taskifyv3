@@ -64,7 +64,7 @@ func (f *loginForm) addError(field, message string) {
 func (f *registerForm) validate(password string) bool {
 	// Username is already lowercase & trimmed by the constructor
 	if utf8.RuneCountInString(f.Username) < 3 || utf8.RuneCountInString(f.Username) > 60 {
-        f.addError("username", "Username must be between 3 and 60 characters.")
+		f.addError("username", "Username must be between 3 and 60 characters.")
 	}
 
 	// Email is already lowercase & trimmed by the constructor
