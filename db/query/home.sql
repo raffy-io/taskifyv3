@@ -1,6 +1,6 @@
 -- name: UpdateHomepage :exec
-INSERT INTO homepage ( title, subtitle,home_image,home_image_alt)
-VALUES ($1,$2,$3,$4)
+INSERT INTO homepage (id, title, subtitle,home_image,home_image_alt)
+VALUES ($1,$2,$3,$4,$5)
 ON CONFLICT (id)
 DO UPDATE SET
     title = EXCLUDED.title,

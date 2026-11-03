@@ -30,8 +30,8 @@ func (q *Queries) GetHomepage(ctx context.Context, id int64) (Homepage, error) {
 }
 
 const updateHomepage = `-- name: UpdateHomepage :exec
-INSERT INTO homepage ( title, subtitle,home_image,home_image_alt)
-VALUES ($1,$2,$3,$4)
+INSERT INTO homepage (id, title, subtitle,home_image,home_image_alt)
+VALUES ($1,$2,$3,$4,$5)
 ON CONFLICT (id)
 DO UPDATE SET
     title = EXCLUDED.title,
@@ -41,6 +41,7 @@ DO UPDATE SET
 `
 
 type UpdateHomepageParams struct {
+	ID           int64
 	Title        string
 	Subtitle     string
 	HomeImage    string
@@ -49,6 +50,7 @@ type UpdateHomepageParams struct {
 
 func (q *Queries) UpdateHomepage(ctx context.Context, arg UpdateHomepageParams) error {
 	_, err := q.db.Exec(ctx, updateHomepage,
+		arg.ID,
 		arg.Title,
 		arg.Subtitle,
 		arg.HomeImage,

@@ -155,6 +155,7 @@ func (h *homeHandler) ProcessUpdateHomepage(w http.ResponseWriter, r *http.Reque
 
 	// TODO: Execute your SQLC update query here using title, subtitle, imagePath, imageAlt...
 	err = h.Queries.UpdateHomepage(ctx, db.UpdateHomepageParams{
+		ID:1,
 		Title:        form.Title,
 		Subtitle:     form.Subtitle,
 		HomeImage:    imagePath,
