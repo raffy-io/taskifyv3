@@ -73,7 +73,7 @@ func (h *homeHandler) ProcessUpdateHomepage(w http.ResponseWriter, r *http.Reque
 	ctx := r.Context()
 
 	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
-	if err := r.ParseMultipartForm(10 << 20); err != nil {
+	if err := r.ParseMultipartForm(15 << 20); err != nil {
 		http.Error(w, "The uploaded file is too big", http.StatusRequestEntityTooLarge)
 		return
 	}
