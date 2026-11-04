@@ -46,7 +46,7 @@ func (h *taskHandler) ServeUserTasks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 3. Pass the username string to your component
-	component := tasksListPage(time.Now(), tasks, user.Username, form)
+	component := tasksListPage(time.Now(), tasks, user, form)
 	if err := h.Renderer.Render(w, r, component); err != nil {
 		slog.Error("Failed to render template", "error", err)
 		http.Error(w, "Failed to render template", http.StatusInternalServerError)
@@ -108,7 +108,7 @@ func (h *taskHandler) createTask(w http.ResponseWriter, r *http.Request) {
 
 	// Render the OOB templates
 	w.WriteHeader(http.StatusOK)
-	if err := tasksHeading(time.Now(), user.Username, true).Render(ctx, w); err != nil {
+	if err := tasksHeading(time.Now(), user, true).Render(ctx, w); err != nil {
 		http.Error(w, "Failed to render template", http.StatusInternalServerError)
 		return
 	}
@@ -222,7 +222,7 @@ func (h *taskHandler) deleteTask(w http.ResponseWriter, r *http.Request) {
 
 	// Render the OOB templates
 	w.WriteHeader(http.StatusOK)
-	if err := tasksHeading(time.Now(), user.Username, true).Render(ctx, w); err != nil {
+	if err := tasksHeading(time.Now(), user, true).Render(ctx, w); err != nil {
 		http.Error(w, "Failed to render template", http.StatusInternalServerError)
 		return
 	}
